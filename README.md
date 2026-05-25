@@ -1,45 +1,30 @@
 # ExamGuard — Motion Detection Proctoring System
 
-<div align="center">
-
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-green?logo=opencv&logoColor=white)
-![Tkinter](https://img.shields.io/badge/GUI-Tkinter-orange)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 ![Tests](https://img.shields.io/badge/Tests-39%2F39%20Passing-brightgreen)
 
-**A lightweight, privacy-preserving exam proctoring prototype using computer vision.**  
+A lightweight, privacy-preserving exam proctoring prototype using computer vision.
 Runs entirely locally — no cloud, no data upload, no internet required during exams.
 
-</div>
-
 ---
 
-## 📸 Screenshots
-
-> Launch the app and click **▶ Start Session** to activate the live webcam feed with overlays.
-
-| Dashboard (idle) | Live Detection |
-|:---:|:---:|
-| Name dialog → dark dashboard with risk panel | Green face box, motion contours, live alert log |
-
----
-
-## ✨ Features
+## Features
 
 | Feature | Technology | Description |
 |---------|-----------|-------------|
-| **Motion Detection** | MOG2 (Mixture of Gaussians) | Detects hand/body movements using adaptive background subtraction |
-| **Face Detection** | Haar Cascade (OpenCV) | Counts faces, detects gaze direction, monitors eye visibility |
-| **Zone Analysis** | Contour + position mapping | Classifies motion into Head / Body / Seat zones |
-| **Risk Scoring** | Custom alert engine | Weighted violation scoring with per-type cooldown timers |
-| **Alert Logging** | CSV + screenshots | Every flagged event is timestamped and saved |
-| **Session Reports** | Plain text summary | End-of-exam report with total alerts, duration, and final risk level |
-| **Dark GUI** | Tkinter (premium theme) | Live camera feed embedded in a styled dashboard |
+| Motion Detection | MOG2 (Mixture of Gaussians) | Detects hand/body movements using adaptive background subtraction |
+| Face Detection | Haar Cascade (OpenCV) | Counts faces, detects gaze direction, monitors eye visibility |
+| Zone Analysis | Contour + position mapping | Classifies motion into Head / Body / Seat zones |
+| Risk Scoring | Custom alert engine | Weighted violation scoring with per-type cooldown timers |
+| Alert Logging | CSV + screenshots | Every flagged event is timestamped and saved |
+| Session Reports | Plain text summary | End-of-exam report with total alerts, duration, and final risk level |
+| Dark GUI | Tkinter | Live camera feed embedded in a styled dashboard |
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 ```
 Webcam Frame
@@ -68,18 +53,18 @@ Webcam Frame
 
 ### Risk Levels
 
-| Score | Level | Color |
-|-------|-------|-------|
-| 0–10 | 🟢 LOW | Green |
-| 11–30 | 🟡 MEDIUM | Yellow |
-| 31–60 | 🟠 HIGH | Orange |
-| 61+ | 🔴 CRITICAL | Red |
+| Score | Level | Indicator |
+|-------|-------|-----------|
+| 0–10 | LOW | Green |
+| 11–30 | MEDIUM | Yellow |
+| 31–60 | HIGH | Orange |
+| 61+ | CRITICAL | Red |
 
-> Score **decays by 1 point every 5 seconds** of clean behaviour.
+Score decays by 1 point every 5 seconds of clean behaviour.
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 examguard-proctoring/
@@ -104,7 +89,7 @@ examguard-proctoring/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.10 or higher
@@ -112,7 +97,7 @@ examguard-proctoring/
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/examguard-proctoring.git
+git clone https://github.com/KJSK-Koushik/examguard-proctoring.git
 cd examguard-proctoring
 ```
 
@@ -126,53 +111,48 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### 4. (Optional) Run tests
+### 4. Run tests
 ```bash
 python test_system.py
 ```
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 All parameters are in [`config/settings.py`](config/settings.py). Key settings:
 
 ```python
-# Camera
 CAMERA_INDEX = 0          # Change if you have multiple cameras
 
-# Motion sensitivity (lower = more sensitive)
-MOG2_VAR_THRESHOLD = 50
+MOG2_VAR_THRESHOLD = 50   # Motion sensitivity (lower = more sensitive)
 
-# Minimum contour area to count as motion
-MOTION_MIN_AREA_SMALL  = 500
-MOTION_MIN_AREA_MEDIUM = 3000
-MOTION_MIN_AREA_LARGE  = 12000
+MOTION_MIN_AREA_SMALL  = 500    # Minimum contour area (noise floor)
+MOTION_MIN_AREA_MEDIUM = 3000   # Hand / object movement
+MOTION_MIN_AREA_LARGE  = 12000  # Body / full-frame movement
 
-# Screenshot saving
 SAVE_SCREENSHOTS     = True
 SCREENSHOT_MIN_SCORE = 10    # Only save when risk score >= this
 
-# Score decay
-SCORE_DECAY_INTERVAL = 5     # seconds
-SCORE_DECAY_AMOUNT   = 1
+SCORE_DECAY_INTERVAL = 5     # seconds between score decay
+SCORE_DECAY_AMOUNT   = 1     # points removed per decay tick
 ```
 
 ---
 
-## 🖥️ GUI Controls
+## GUI Controls
 
 | Button | Action |
 |--------|--------|
-| **▶ Start Session** | Opens webcam and begins proctoring |
-| **⏸ Pause** | Freezes detection (for break time) |
-| **🔄 Reset Score** | Clears the risk score to 0 |
-| **💾 Save Report** | Writes session summary to `logs/` |
-| **✖ Quit** | Auto-saves report and closes |
+| Start Session | Opens webcam and begins proctoring |
+| Pause | Freezes detection (for break time) |
+| Reset Score | Clears the risk score to 0 |
+| Save Report | Writes session summary to `logs/` |
+| Quit | Auto-saves report and closes |
 
 ---
 
-## 📁 Session Output
+## Session Output
 
 All session data is written to the `logs/` directory (git-ignored):
 
@@ -188,13 +168,9 @@ logs/
 
 ---
 
-## 🔬 Test Suite
+## Test Suite
 
-```bash
-python test_system.py
-```
-
-Covers 39 tests across 8 modules:
+39 tests across 8 modules:
 
 | Module | Tests |
 |--------|-------|
@@ -209,36 +185,30 @@ Covers 39 tests across 8 modules:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
-- [ ] **YOLOv8 phone/book detection** (object detection module)
-- [ ] **Sound alerts** for CRITICAL risk level
-- [ ] **Live risk score graph** over session timeline
-- [ ] **PDF report** with charts
-- [ ] **Multi-student mode** (multiple camera feeds)
-- [ ] **Face recognition** (verify student identity at start)
+- [ ] YOLOv8 phone/book detection (object detection module)
+- [ ] Sound alerts for CRITICAL risk level
+- [ ] Live risk score graph over session timeline
+- [ ] PDF report with charts
+- [ ] Multi-student mode (multiple camera feeds)
+- [ ] Face recognition to verify student identity at session start
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Library | Purpose | Version |
 |---------|---------|---------|
-| `opencv-python` | Core CV, camera, Haar cascades | ≥ 4.8 |
-| `numpy` | Frame array operations | ≥ 1.24 |
-| `Pillow` | Frame → Tkinter image conversion | ≥ 10.0 |
-| `pandas` | Session data handling | ≥ 2.0 |
-| `fpdf2` | PDF report generation (future) | ≥ 2.7 |
-| `tkinter` | GUI framework (stdlib) | Built-in |
+| `opencv-python` | Core CV, camera, Haar cascades | >= 4.8 |
+| `numpy` | Frame array operations | >= 1.24 |
+| `Pillow` | Frame to Tkinter image conversion | >= 10.0 |
+| `pandas` | Session data handling | >= 2.0 |
+| `fpdf2` | PDF report generation (future) | >= 2.7 |
+| `tkinter` | GUI framework | Built-in |
 
 ---
 
-## 📜 License
+## License
 
 MIT License — free to use, modify, and distribute.
-
----
-
-## 👤 Author
-
-Built as a prototype for exam proctoring research using lightweight, privacy-preserving computer vision.
