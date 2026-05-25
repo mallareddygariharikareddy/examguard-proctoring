@@ -195,6 +195,19 @@ logs/
 
 ---
 
+## Contributors
+
+Thanks to the contributors who helped build ExamGuard:
+
+| Contributor | GitHub |
+|-------------|--------|
+| mallareddygariharikareddy | [@mallareddygariharikareddy](https://github.com/mallareddygariharikareddy) |
+| K.Koushik | [@KJSK-Koushik](https://github.com/KJSK-Koushik) |
+
+See [`CONTRIBUTORS.md`](CONTRIBUTORS.md) for contributor notes.
+
+---
+
 ## Tech Stack
 
 | Library | Purpose | Version |
