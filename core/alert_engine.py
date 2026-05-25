@@ -46,6 +46,14 @@ class AlertEngine:
         self._last_decay: float = time.time()
         self._events: List[AlertEvent] = []       # all-time log
         self._recent_events: List[AlertEvent] = [] # last N for the HUD
+        self._streaks: Dict[str, int] = {
+            "no_face": 0,
+            "multiple_faces": 0,
+            "looking_away": 0,
+            "excess_motion": 0,
+            "large_motion": 0,
+            "seat_empty": 0,
+        }
 
     # ─── Public ──────────────────────────────────────────────────────────────
 
@@ -64,38 +72,68 @@ class AlertEngine:
         new_events: List[AlertEvent] = []
 
         # ── Face-based violations ─────────────────────────────────────────────
-        if face_analysis.face_count == 0:
+        if self._confirmed(
+            "no_face",
+            face_analysis.face_count == 0,
+            settings.NO_FACE_FRAME_THRESHOLD,
+        ):
             ev = self._try_fire("no_face", frame)
             if ev:
                 new_events.append(ev)
 
-        if face_analysis.face_count > 1:
+        if self._confirmed(
+            "multiple_faces",
+            face_analysis.face_count > 1,
+            settings.MULTIPLE_FACE_FRAME_THRESHOLD,
+        ):
             ev = self._try_fire("multiple_faces", frame)
             if ev:
                 new_events.append(ev)
 
-        if face_analysis.status == "away":
+        if self._confirmed(
+            "looking_away",
+            face_analysis.status == "away",
+            settings.LOOKING_AWAY_FRAME_THRESHOLD,
+        ):
             ev = self._try_fire("looking_away", frame)
             if ev:
                 new_events.append(ev)
 
         # ── Motion-based violations ───────────────────────────────────────────
         if motion_level == "high":
-            ev = self._try_fire("excess_motion", frame)
-            if ev:
-                new_events.append(ev)
+            if self._confirmed(
+                "excess_motion",
+                True,
+                settings.HIGH_MOTION_FRAME_THRESHOLD,
+            ):
+                ev = self._try_fire("excess_motion", frame)
+                if ev:
+                    new_events.append(ev)
+            self._confirmed("large_motion", False, settings.BODY_MOTION_FRAME_THRESHOLD)
         elif motion_level == "medium":
+            self._confirmed("excess_motion", False, settings.HIGH_MOTION_FRAME_THRESHOLD)
             # Check if motion is in body zone (likely hands reaching for something)
             body_motion = any(r.zone == "body" for r in motion_regions)
-            if body_motion:
+            if self._confirmed(
+                "large_motion",
+                body_motion,
+                settings.BODY_MOTION_FRAME_THRESHOLD,
+            ):
                 ev = self._try_fire("large_motion", frame)
                 if ev:
                     new_events.append(ev)
+        else:
+            self._confirmed("excess_motion", False, settings.HIGH_MOTION_FRAME_THRESHOLD)
+            self._confirmed("large_motion", False, settings.BODY_MOTION_FRAME_THRESHOLD)
 
         # ── Seat empty ────────────────────────────────────────────────────────
         seat_motion = any(r.zone == "seat" and r.magnitude == "large"
                           for r in motion_regions)
-        if face_analysis.face_count == 0 and seat_motion:
+        if self._confirmed(
+            "seat_empty",
+            face_analysis.face_count == 0 and seat_motion,
+            settings.NO_FACE_FRAME_THRESHOLD,
+        ):
             ev = self._try_fire("seat_empty", frame)
             if ev:
                 new_events.append(ev)
@@ -106,6 +144,8 @@ class AlertEngine:
         """Called by the user pressing the Reset button."""
         self.score = 0
         self._cooldowns.clear()
+        for key in self._streaks:
+            self._streaks[key] = 0
 
     def get_risk_level(self) -> RiskLevel:
         for lo, hi, label, color, emoji in settings.RISK_LEVELS:
@@ -151,6 +191,14 @@ class AlertEngine:
         )
         self._events.append(event)
         return event
+
+    def _confirmed(self, key: str, condition: bool, threshold: int) -> bool:
+        """Return True only after a violation condition persists."""
+        if condition:
+            self._streaks[key] = self._streaks.get(key, 0) + 1
+        else:
+            self._streaks[key] = 0
+        return self._streaks[key] >= max(1, threshold)
 
     def _apply_decay(self):
         """Gradually reduce score during clean periods."""

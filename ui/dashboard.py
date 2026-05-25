@@ -5,8 +5,8 @@ Layout (dark theme):
   ┌───────────────── TOP BAR ─────────────────┐
   │ Logo  |  Student name  |  Timer  |  REC   │
   ├──────────────┬────────────────────────────┤
-  │              │   RISK SCORE CARD           │
-  │  CAMERA FEED │   STATUS PANEL              │
+  │              │   STATUS PANEL              │
+  │  CAMERA FEED │   DETECTION INDICATORS      │
   │  (live HUD)  │   DETECTION INDICATORS      │
   │              │   RECENT ALERTS LOG         │
   └──────────────┴────────────────────────────┘
@@ -109,8 +109,6 @@ class ProctoringDashboard:
         self._f_title   = tkfont.Font(family=settings.FONT_FAMILY, size=13, weight="bold")
         self._f_body    = tkfont.Font(family=settings.FONT_FAMILY, size=10)
         self._f_small   = tkfont.Font(family=settings.FONT_FAMILY, size=9)
-        self._f_score   = tkfont.Font(family=settings.FONT_FAMILY, size=36, weight="bold")
-        self._f_risk    = tkfont.Font(family=settings.FONT_FAMILY, size=14, weight="bold")
         self._f_mono    = tkfont.Font(family="Consolas", size=9)
         self._f_icon    = tkfont.Font(family=settings.FONT_FAMILY, size=18)
         self._f_label   = tkfont.Font(family=settings.FONT_FAMILY, size=9, weight="bold")
@@ -196,25 +194,6 @@ class ProctoringDashboard:
         right = tk.Frame(content, bg=C["bg"])
         right.pack(side="left", fill="both", expand=True, padx=(10, 0))
 
-        # ── Risk Score Card ────────────────────────────────────────────────────
-        score_card = tk.Frame(right, bg=C["card"], bd=0,
-                              highlightthickness=1,
-                              highlightbackground=C["border"])
-        score_card.pack(fill="x", pady=(0, 8))
-
-        tk.Label(score_card, text="RISK SCORE", font=self._f_label,
-                 bg=C["card"], fg=C["text_dim"]).pack(pady=(10, 0))
-
-        self._score_var = tk.StringVar(value="0")
-        self._score_lbl = tk.Label(score_card, textvariable=self._score_var,
-                                    font=self._f_score, bg=C["card"], fg=C["green"])
-        self._score_lbl.pack()
-
-        self._risk_var = tk.StringVar(value="🟢 LOW")
-        self._risk_lbl = tk.Label(score_card, textvariable=self._risk_var,
-                                   font=self._f_risk, bg=C["card"], fg=C["green"])
-        self._risk_lbl.pack(pady=(0, 10))
-
         # ── Status indicators ──────────────────────────────────────────────────
         status_card = tk.Frame(right, bg=C["card"], bd=0,
                                highlightthickness=1,
@@ -271,29 +250,16 @@ class ProctoringDashboard:
             tk.Label(col, text=label, font=self._f_small,
                      bg=C["card"], fg=C["text_dim"]).pack()
 
-        # ── Alert log ──────────────────────────────────────────────────────────
-        log_card = tk.Frame(right, bg=C["card"], bd=0,
-                            highlightthickness=1,
-                            highlightbackground=C["border"])
-        log_card.pack(fill="both", expand=True)
-
-        tk.Label(log_card, text="ALERT LOG", font=self._f_label,
-                 bg=C["card"], fg=C["text_dim"]).pack(anchor="w", padx=14, pady=(10, 4))
-
-        self._log_text = tk.Text(
-            log_card, bg=C["panel"], fg=C["text"],
-            font=self._f_mono, bd=0, relief="flat",
-            state="disabled", wrap="word",
-            highlightthickness=0,
+        self._status_msg_var = tk.StringVar(value="Ready")
+        self._status_msg_lbl = tk.Label(
+            right,
+            textvariable=self._status_msg_var,
+            font=self._f_small,
+            bg=C["bg"],
+            fg=C["text_dim"],
+            anchor="w",
         )
-        self._log_text.pack(fill="both", expand=True, padx=8, pady=(0, 8))
-
-        # Configure log tags for colouring
-        self._log_text.tag_configure("low",      foreground=C["text_dim"])
-        self._log_text.tag_configure("medium",   foreground=C["yellow"])
-        self._log_text.tag_configure("high",     foreground=C["orange"])
-        self._log_text.tag_configure("critical", foreground=C["red"])
-        self._log_text.tag_configure("time",     foreground=C["accent"])
+        self._status_msg_lbl.pack(fill="x", pady=(2, 0))
 
         # ── Show placeholder on canvas ─────────────────────────────────────────
         self._draw_placeholder()
@@ -412,68 +378,7 @@ class ProctoringDashboard:
     # ─── HUD Drawing ──────────────────────────────────────────────────────────
 
     def _draw_hud(self, frame, face_analysis, regions, fg_mask, motion_level):
-        """Overlay detection results onto the BGR frame."""
-        h, w = frame.shape[:2]
-
-        # Zone dividers (subtle)
-        zone_y1 = int(h * settings.ZONE_HEAD_BOTTOM)
-        zone_y2 = int(h * settings.ZONE_BODY_BOTTOM)
-        cv2.line(frame, (0, zone_y1), (w, zone_y1), (48, 54, 61), 1)
-        cv2.line(frame, (0, zone_y2), (w, zone_y2), (48, 54, 61), 1)
-
-        # Motion contours
-        for region in regions:
-            x, y, rw, rh = region.bbox
-            color = {
-                "large":  (248, 81,  73),   # red
-                "medium": (230, 126, 34),    # orange
-                "small":  (88,  166, 255),   # blue
-            }.get(region.magnitude, (88, 166, 255))
-            cv2.rectangle(frame, (x, y), (x + rw, y + rh), color, 2)
-            cv2.putText(frame, f"{region.zone}/{region.magnitude}",
-                        (x, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
-
-        # Face boxes
-        if face_analysis.faces:
-            for i, face in enumerate(face_analysis.faces):
-                fx, fy, fw, fh = face.bbox
-                is_primary = (i == 0)
-                color = (63, 185, 80) if (is_primary and face.eye_count >= 1) \
-                         else (248, 81, 73)
-                thickness = 2 if is_primary else 1
-                cv2.rectangle(frame, (fx, fy), (fx + fw, fy + fh),
-                              color, thickness)
-                label = f"Face {i+1} | {face.gaze} | eyes:{face.eye_count}"
-                cv2.putText(frame, label,
-                            (fx, fy - 8), cv2.FONT_HERSHEY_SIMPLEX,
-                            0.45, color, 1)
-
-        # Top-left status badge
-        risk = self._alert.get_risk_level()
-        badge_color = {
-            "LOW":      (63,  185, 80),
-            "MEDIUM":   (210, 153, 34),
-            "HIGH":     (230, 126, 34),
-            "CRITICAL": (248, 81,  73),
-        }.get(risk.label, (88, 166, 255))
-
-        cv2.rectangle(frame, (8, 8), (220, 38), (22, 27, 34), -1)
-        cv2.rectangle(frame, (8, 8), (220, 38), badge_color, 1)
-        cv2.putText(frame, f"SCORE:{self._alert.score}  RISK:{risk.label}",
-                    (14, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.55, badge_color, 1)
-
-        # Motion level badge (top right)
-        ml_color = {
-            "none":   (63,  185, 80),
-            "low":    (63,  185, 80),
-            "medium": (210, 153, 34),
-            "high":   (248, 81,  73),
-        }.get(motion_level, (88, 166, 255))
-        cv2.rectangle(frame, (w - 175, 8), (w - 8, 38), (22, 27, 34), -1)
-        cv2.rectangle(frame, (w - 175, 8), (w - 8, 38), ml_color, 1)
-        cv2.putText(frame, f"MOTION: {motion_level.upper()}",
-                    (w - 168, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.55, ml_color, 1)
-
+        """Return a clean camera feed; alerts are shown in the log panel."""
         return frame
 
     # ─── Tkinter UI refresh (runs on main thread via after()) ────────────────
@@ -504,15 +409,6 @@ class ProctoringDashboard:
         """Update all UI widgets from the latest processed frame result."""
         # Camera canvas
         self._update_canvas(result["frame"])
-
-        # Score + risk
-        risk  = result["risk"]
-        score = result["score"]
-        self._score_var.set(str(score))
-        self._risk_var.set(f"{risk.emoji} {risk.label}")
-        color = RISK_COLOURS.get(risk.label, C["text"])
-        self._score_lbl.configure(fg=color)
-        self._risk_lbl.configure(fg=color)
 
         # Detection indicators
         fa = result["face_analysis"]
@@ -552,9 +448,9 @@ class ProctoringDashboard:
         high_count = sum(1 for e in all_events if e.severity == "high")
         self._high_alerts_var.set(str(high_count))
 
-        # New alert log entries
-        for event in result["new_events"]:
-            self._append_log_entry(event)
+        if result["new_events"]:
+            latest = result["new_events"][-1]
+            self._set_status(f"Latest alert: {latest.label}", latest.severity)
 
     def _update_canvas(self, frame: np.ndarray):
         """Convert BGR frame → Tkinter PhotoImage and put on canvas."""
@@ -564,16 +460,16 @@ class ProctoringDashboard:
         self._canvas.create_image(0, 0, anchor="nw", image=photo)
         self._photo_ref = photo   # prevent GC
 
-    def _append_log_entry(self, event: AlertEvent):
-        """Add one coloured line to the alert log Text widget."""
-        ts  = datetime.datetime.fromtimestamp(event.timestamp).strftime("%H:%M:%S")
-        sev = event.severity
-
-        self._log_text.configure(state="normal")
-        self._log_text.insert("end", f"[{ts}] ", ("time",))
-        self._log_text.insert("end", f"{event.label}\n", (sev,))
-        self._log_text.see("end")
-        self._log_text.configure(state="disabled")
+    def _set_status(self, text: str, tag: str = "low"):
+        """Show a single-line interface message without an alert log panel."""
+        colors = {
+            "low": C["text_dim"],
+            "medium": C["yellow"],
+            "high": C["orange"],
+            "critical": C["red"],
+        }
+        self._status_msg_var.set(text)
+        self._status_msg_lbl.configure(fg=colors.get(tag, C["text_dim"]))
 
     # ─── Blinking REC indicator ───────────────────────────────────────────────
 
@@ -596,7 +492,7 @@ class ProctoringDashboard:
             return
         ok = self._camera.start()
         if not ok:
-            self._append_raw_log("❌ Could not open webcam. Check connection.", "critical")
+            self._set_status("Could not open webcam. Check connection.", "critical")
             return
 
         self._running     = True
@@ -631,21 +527,17 @@ class ProctoringDashboard:
 
     def _on_reset_score(self):
         self._alert.reset_score()
-        self._score_var.set("0")
-        self._risk_var.set("🟢 LOW")
-        self._score_lbl.configure(fg=C["green"])
-        self._risk_lbl.configure(fg=C["green"])
-        self._append_raw_log("⟳ Score manually reset.", "low")
+        self._set_status("Score manually reset.", "low")
 
     def _on_save_report(self):
         if not self._running:
-            self._append_raw_log("⚠ Start a session first.", "medium")
+            self._set_status("Start a session first.", "medium")
             return
         path = self._reporter.close_session(
             final_score=self._alert.score,
             duration_secs=time.time() - self._start_time,
         )
-        self._append_raw_log(f"💾 Report saved → {path}", "low")
+        self._set_status(f"Report saved: {path}", "low")
         # Re-open so logging continues
         try:
             self._reporter.open_session()
@@ -670,10 +562,3 @@ class ProctoringDashboard:
         except Exception:
             pass
 
-    def _append_raw_log(self, text: str, tag: str = "low"):
-        ts = datetime.datetime.now().strftime("%H:%M:%S")
-        self._log_text.configure(state="normal")
-        self._log_text.insert("end", f"[{ts}] ", ("time",))
-        self._log_text.insert("end", f"{text}\n", (tag,))
-        self._log_text.see("end")
-        self._log_text.configure(state="disabled")

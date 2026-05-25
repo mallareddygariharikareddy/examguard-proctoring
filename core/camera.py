@@ -6,6 +6,7 @@ frame (plus raw dimensions) to consumers via a thread-safe property.
 """
 
 import threading
+import time
 import cv2
 from config import settings
 
@@ -56,6 +57,12 @@ class CameraManager:
         self._thread  = threading.Thread(target=self._capture_loop,
                                          daemon=True, name="CameraThread")
         self._thread.start()
+
+        deadline = time.time() + 1.0
+        while time.time() < deadline:
+            if self.read() is not None:
+                break
+            time.sleep(0.03)
         return True
 
     def read(self):
@@ -84,6 +91,7 @@ class CameraManager:
         while self._running:
             ok, frame = self._cap.read()
             if not ok:
+                time.sleep(0.01)
                 continue
             # Force to target resolution — some cameras ignore set() requests
             h, w = frame.shape[:2]

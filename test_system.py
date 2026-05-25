@@ -195,8 +195,8 @@ def test_motion_magnitude():
     from core.motion_detector import MotionDetector
     md = MotionDetector()
     assert md._classify_magnitude(100)   == "small"
-    assert md._classify_magnitude(5000)  == "medium"
-    assert md._classify_magnitude(15000) == "large"
+    assert md._classify_magnitude(8000)  == "medium"
+    assert md._classify_magnitude(25000) == "large"
 
 def test_motion_reset():
     from core.motion_detector import MotionDetector
@@ -291,9 +291,12 @@ def test_alert_initial_state():
 def test_alert_no_face_fires():
     from core.alert_engine import AlertEngine
     from core.face_detector import FaceAnalysis
+    from config import settings
     ae = AlertEngine()
     fa = FaceAnalysis(face_count=0, status="no_face")
-    events = ae.evaluate(fa, "none", [])
+    events = []
+    for _ in range(settings.NO_FACE_FRAME_THRESHOLD):
+        events = ae.evaluate(fa, "none", [])
     assert len(events) >= 1
     assert any(e.violation_key == "no_face" for e in events)
     assert ae.score > 0
@@ -301,13 +304,16 @@ def test_alert_no_face_fires():
 def test_alert_multiple_faces():
     from core.alert_engine import AlertEngine
     from core.face_detector import FaceAnalysis, FaceResult
+    from config import settings
     ae = AlertEngine()
     r1 = FaceResult(bbox=(0,0,100,100), eye_count=2, gaze="centre", area=10000)
     r2 = FaceResult(bbox=(200,0,100,100), eye_count=2, gaze="centre", area=10000)
     fa = FaceAnalysis(faces=[r1, r2], face_count=2,
                       primary=r1, eyes_visible=True, gaze="centre",
                       status="multiple")
-    events = ae.evaluate(fa, "none", [])
+    events = []
+    for _ in range(settings.MULTIPLE_FACE_FRAME_THRESHOLD):
+        events = ae.evaluate(fa, "none", [])
     assert any(e.violation_key == "multiple_faces" for e in events), \
         "multiple_faces violation not fired"
 
@@ -324,21 +330,26 @@ def test_alert_cooldown():
 def test_alert_score_accumulates():
     from core.alert_engine import AlertEngine
     from core.face_detector import FaceAnalysis
+    from config import settings
     ae = AlertEngine()
     fa = FaceAnalysis(face_count=0, status="no_face")
-    ae.evaluate(fa, "none", [])
+    for _ in range(settings.NO_FACE_FRAME_THRESHOLD):
+        ae.evaluate(fa, "none", [])
     score_after_1 = ae.score
     # Wait for cooldown to expire (no_face cooldown = 2s)
     time.sleep(2.1)
-    ae.evaluate(fa, "none", [])
+    for _ in range(settings.NO_FACE_FRAME_THRESHOLD):
+        ae.evaluate(fa, "none", [])
     assert ae.score > score_after_1, "Score should increase after cooldown expires"
 
 def test_alert_reset_score():
     from core.alert_engine import AlertEngine
     from core.face_detector import FaceAnalysis
+    from config import settings
     ae = AlertEngine()
     fa = FaceAnalysis(face_count=0, status="no_face")
-    ae.evaluate(fa, "none", [])
+    for _ in range(settings.NO_FACE_FRAME_THRESHOLD):
+        ae.evaluate(fa, "none", [])
     assert ae.score > 0
     ae.reset_score()
     assert ae.score == 0
@@ -358,9 +369,12 @@ def test_alert_risk_levels():
 def test_alert_high_motion_fires():
     from core.alert_engine import AlertEngine
     from core.face_detector import FaceAnalysis
+    from config import settings
     ae = AlertEngine()
     fa = FaceAnalysis(face_count=1, status="ok", eyes_visible=True)
-    events = ae.evaluate(fa, "high", [])
+    events = []
+    for _ in range(settings.HIGH_MOTION_FRAME_THRESHOLD):
+        events = ae.evaluate(fa, "high", [])
     assert any(e.violation_key == "excess_motion" for e in events), \
         "excess_motion not fired for high motion"
 

@@ -129,8 +129,8 @@ class MotionDetector:
             return "none"
         total_area = sum(r.area for r in regions)
         fraction   = total_area / frame_area
-        if fraction > 0.15 or any(r.magnitude == "large" for r in regions):
+        if fraction > 0.22 or any(r.magnitude == "large" for r in regions):
             return "high"
-        if fraction > 0.04 or any(r.magnitude == "medium" for r in regions):
+        if fraction > 0.08 or any(r.magnitude == "medium" for r in regions):
             return "medium"
         return "low"

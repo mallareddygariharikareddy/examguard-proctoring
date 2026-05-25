@@ -15,15 +15,15 @@ TARGET_FPS          = 30
 #  MOTION DETECTION (MOG2)
 # ─────────────────────────────────────────────
 MOG2_HISTORY        = 500      # frames kept in background model
-MOG2_VAR_THRESHOLD  = 50       # sensitivity (lower = more sensitive)
+MOG2_VAR_THRESHOLD  = 80       # sensitivity (lower = more sensitive)
 MOG2_DETECT_SHADOWS = True
 MOTION_BLUR_KERNEL  = (21, 21)
 MORPH_KERNEL_SIZE   = (5, 5)
 
 # Minimum contour area (pixels²) to count as real motion
-MOTION_MIN_AREA_SMALL  = 500    # noise floor
-MOTION_MIN_AREA_MEDIUM = 3000   # hand / object movement
-MOTION_MIN_AREA_LARGE  = 12000  # body / full-frame movement
+MOTION_MIN_AREA_SMALL  = 1200   # noise floor
+MOTION_MIN_AREA_MEDIUM = 7000   # deliberate hand / object movement
+MOTION_MIN_AREA_LARGE  = 22000  # body / full-frame movement
 
 # Frame zones (fractions of frame height)
 ZONE_HEAD_TOP     = 0.0
@@ -36,9 +36,16 @@ ZONE_SEAT_BOTTOM  = 1.0
 # ─────────────────────────────────────────────
 #  FACE DETECTION (Haar Cascade)
 # ─────────────────────────────────────────────
+FACE_DETECTOR_BACKEND = "mediapipe"  # "mediapipe" or "haar"
+MEDIAPIPE_FACE_MODEL_PATH = "models/blaze_face_short_range.tflite"
+MEDIAPIPE_FACE_MIN_CONFIDENCE = 0.55
+
 FACE_SCALE_FACTOR   = 1.1
-FACE_MIN_NEIGHBORS  = 5
-FACE_MIN_SIZE       = (60, 60)
+FACE_MIN_NEIGHBORS  = 7
+FACE_PROFILE_MIN_NEIGHBORS = 5
+FACE_MIN_SIZE       = (45, 45)
+FACE_NMS_IOU_THRESHOLD = 0.30
+FACE_SECONDARY_MIN_AREA_RATIO = 0.20
 
 EYE_SCALE_FACTOR    = 1.1
 EYE_MIN_NEIGHBORS   = 10
@@ -46,6 +53,10 @@ EYE_MIN_SIZE        = (20, 20)
 
 # How many consecutive frames of no-face before alerting
 NO_FACE_FRAME_THRESHOLD = 15    # ~0.5 sec at 30fps
+MULTIPLE_FACE_FRAME_THRESHOLD = 4
+LOOKING_AWAY_FRAME_THRESHOLD = 12
+HIGH_MOTION_FRAME_THRESHOLD = 8
+BODY_MOTION_FRAME_THRESHOLD = 12
 
 # ─────────────────────────────────────────────
 #  ALERT ENGINE — VIOLATION SCORES & COOLDOWNS
