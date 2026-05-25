@@ -5,7 +5,6 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-green?logo=opencv&logoColor=white)
 ![Tkinter](https://img.shields.io/badge/GUI-Tkinter-orange)
-![License](https://img.shields.io/badge/License-MIT-purple)
 ![Tests](https://img.shields.io/badge/Tests-39%2F39%20Passing-brightgreen)
 
 **A lightweight, privacy-preserving exam proctoring prototype using computer vision.**  
@@ -231,11 +230,6 @@ Covers 39 tests across 8 modules:
 | `fpdf2` | PDF report generation (future) | ≥ 2.7 |
 | `tkinter` | GUI framework (stdlib) | Built-in |
 
----
-
-## 📜 License
-
-MIT License — free to use, modify, and distribute.
 
 ---
 
